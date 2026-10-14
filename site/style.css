@@ -84,7 +84,7 @@ input, select, button, .button {
   padding: 7px 10px;
 }
 select, input:not([type]), input[name="tz"], input[name="title"] { width: 100%; }
-.date select { width: auto; }
+.date select, .field.inline select { width: auto; }
 input[type="color"] { padding: 2px; width: 44px; height: 32px; }
 input[type="range"] { padding: 0; accent-color: var(--accent); }
 details { margin-top: 12px; }

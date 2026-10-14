@@ -68,6 +68,16 @@ export function monthName(cal, m) {
   return (cal === "gregory" ? GREG_MONTHS : HIJRI_MONTHS)[m - 1];
 }
 
+// Compact labels for month blocks on the wallpaper.
+const HIJRI_SHORT = [
+  "Muharram", "Safar", "Rabi I", "Rabi II", "Jumada I", "Jumada II",
+  "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah",
+];
+
+export function shortMonthName(cal, m) {
+  return cal === "gregory" ? GREG_MONTHS[m - 1].slice(0, 3) : HIJRI_SHORT[m - 1];
+}
+
 export function formatDate(cal, t) {
   const p = parts(cal, t);
   return cal === "gregory"
@@ -143,9 +153,10 @@ export function monthLength(cal, y, m) {
 
 /**
  * Compute what a wallpaper view should show.
- * Returns { total, elapsed, title, subtitle, groups } where `elapsed` is the
- * number of fully passed days (today's dot index) and `groups` are dot counts
- * per month (for spacing), or null.
+ * Returns { total, elapsed, title, subtitle, footer, months, quarters } where
+ * `elapsed` is the number of fully passed days (today's dot index) and
+ * `months` / `quarters` are consecutive segments { label, start, days } of the
+ * period (null when not applicable), used by the block layouts.
  */
 export function computeView({ view, cal, tz, start, end, title }) {
   const t = today(tz);
@@ -163,7 +174,8 @@ export function computeView({ view, cal, tz, start, end, title }) {
       title: title || "Goal",
       subtitle: `${formatDate(cal, e)}`,
       footer: left === 0 ? "Done" : `${left}d left · ${pct(elapsed, total)}%`,
-      groups: null,
+      months: null,
+      quarters: null,
     };
   }
 
@@ -171,9 +183,18 @@ export function computeView({ view, cal, tz, start, end, title }) {
   const total = Math.round((b.end - b.start) / DAY);
   const elapsed = Math.round((t - b.start) / DAY);
   const p = parts(cal, t);
-  const groups = [];
+  const months = [];
   for (let m = b.start; m < b.end; m = nextMonthStart(cal, m)) {
-    groups.push(Math.round((Math.min(nextMonthStart(cal, m), b.end) - m) / DAY));
+    const next = Math.min(nextMonthStart(cal, m), b.end);
+    months.push({ label: shortMonthName(cal, parts(cal, m).m), start: m, days: Math.round((next - m) / DAY) });
+  }
+  let quarters = null;
+  if (view === "year") {
+    quarters = [];
+    for (let i = 0; i < months.length; i += 3) {
+      const group = months.slice(i, i + 3);
+      quarters.push({ label: `Q${i / 3 + 1}`, start: group[0].start, days: group.reduce((s, x) => s + x.days, 0) });
+    }
   }
   const left = total - elapsed;
   return {
@@ -182,7 +203,8 @@ export function computeView({ view, cal, tz, start, end, title }) {
     title: view === "quarter" ? `Q${b.q} · ${yearLabel(cal, p.y)}` : yearLabel(cal, p.y),
     subtitle: formatDate(cal, t),
     footer: `${left}d left · ${pct(elapsed, total)}%`,
-    groups,
+    months,
+    quarters,
   };
 }
 

@@ -34,6 +34,22 @@
         <p class="hint">Hijri dates follow the official Umm al-Qura calendar.</p>
       </fieldset>
 
+      <fieldset id="layout-fields">
+        <legend>Layout</legend>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="layout" value="grid"><span>Grid</span></label>
+          <label><input type="radio" name="layout" value="months" checked><span>Months</span></label>
+          <label id="layout-quarters"><input type="radio" name="layout" value="quarters"><span>Quarters</span></label>
+        </div>
+        <label class="field inline" id="week-start">Week starts on
+          <select name="weekStart">
+            <option value="6">Saturday</option>
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+          </select>
+        </label>
+      </fieldset>
+
       <fieldset id="goal-fields" hidden>
         <legend>Goal</legend>
         <label class="field">Title <input name="title" maxlength="40" placeholder="Ramadan"></label>

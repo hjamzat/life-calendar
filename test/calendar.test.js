@@ -65,7 +65,8 @@ test("views produce consistent counts", () => {
     for (const cal of ["hijri", "gregory"]) {
       const v = computeView({ view, cal, tz: "Asia/Riyadh" });
       assert.ok(v.elapsed >= 0 && v.elapsed < v.total);
-      assert.equal(v.groups.reduce((a, b) => a + b, 0), v.total);
+      assert.equal(v.months.reduce((a, s) => a + s.days, 0), v.total);
+      if (view === "year") assert.equal(v.quarters.reduce((a, s) => a + s.days, 0), v.total);
     }
   }
   const goal = computeView({ view: "goal", cal: "hijri", tz: "UTC", start: fromISO("2020-01-01"), end: fromISO("2020-03-01") });

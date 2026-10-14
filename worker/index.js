@@ -1,6 +1,7 @@
 // Cloudflare Worker: renders wallpaper PNGs on request.
 //   GET /wallpaper.png?view=year|quarter|goal&cal=hijri|gregory&w=1179&h=2556&tz=Asia/Riyadh
 //                     &theme=dark|black|light&accent=d9a441
+//                     &layout=grid|months|quarters&ws=0..6   (block layouts; ws 0 = Sunday)
 //                     [&start=YYYY-MM-DD&end=YYYY-MM-DD&title=...]   (goal)
 //   GET /wallpaper.svg?...   same, as SVG (debugging)
 
@@ -9,7 +10,7 @@ import resvgWasm from "@resvg/resvg-wasm/index_bg.wasm";
 import interRegular from "../site/fonts/Inter-Regular.ttf";
 import interSemiBold from "../site/fonts/Inter-SemiBold.ttf";
 import { computeView, fromISO, today, toISO } from "../site/lib/calendar.js";
-import { layout, THEMES, toSVG } from "../site/lib/render.js";
+import { LAYOUTS, layout, THEMES, toSVG } from "../site/lib/render.js";
 import { rasterize } from "./raster.js";
 
 let ready;
@@ -56,6 +57,8 @@ export function parseParams(params) {
     theme,
     tz,
     accent,
+    layout: oneOf(params, "layout", LAYOUTS, "grid"),
+    weekStart: int(params, "ws", 0, 0, 6),
     w: int(params, "w", 1179, 200, 4000),
     h: int(params, "h", 2556, 200, 4000),
     top: int(params, "top", 33, 0, 80) / 100,

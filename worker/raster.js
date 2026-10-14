@@ -67,14 +67,18 @@ export function rasterize(L, fontBuffers) {
   if (L.texts.length) {
     const strips = [];
     let stackH = 0;
+    let stackW = 1;
     for (const t of L.texts) {
       const top = Math.max(0, Math.floor(t.y - t.size * 1.1));
       const height = Math.min(h - top, Math.ceil(t.size * 1.5));
-      strips.push({ t, top, height, at: stackH });
+      const left = t.box ? Math.max(0, Math.floor(t.box[0])) : 0;
+      const width = (t.box ? Math.min(w, Math.ceil(t.box[1])) : w) - left;
+      strips.push({ t, top, height, left, width, at: stackH });
       stackH += height;
+      stackW = Math.max(stackW, width);
     }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${stackH}" font-family="${FONT_FAMILY}">${strips
-      .map((s) => textSVG(s.t, s.at - s.top))
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${stackW}" height="${stackH}" font-family="${FONT_FAMILY}">${strips
+      .map((s) => textSVG(s.t, s.at - s.top, -s.left))
       .join("")}</svg>`;
     const img = new Resvg(svg, {
       font: { fontBuffers, defaultFontFamily: FONT_FAMILY, loadSystemFonts: false },
@@ -84,9 +88,9 @@ export function rasterize(L, fontBuffers) {
       const c = ci.get(s.t.fill);
       markRows(s.top, s.top + s.height - 1);
       for (let y = 0; y < s.height; y++) {
-        const src = (s.at + y) * w * 4;
-        const dst = (s.top + y) * stride + 1;
-        for (let x = 0; x < w; x++) {
+        const src = (s.at + y) * stackW * 4;
+        const dst = (s.top + y) * stride + 1 + s.left;
+        for (let x = 0; x < s.width; x++) {
           const a = px[src + x * 4 + 3];
           if (a) {
             const level = Math.round((a / 255) * LEVELS);

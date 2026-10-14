@@ -44,9 +44,23 @@ const saved = (() => {
   }
 })();
 
+// Locale's first day of week (Intl: 1 = Monday … 7 = Sunday) → 0 = Sunday … 6 = Saturday.
+function localeWeekStart() {
+  try {
+    const loc = new Intl.Locale(navigator.language);
+    const first = (loc.getWeekInfo?.() ?? loc.weekInfo)?.firstDay;
+    const ws = first % 7;
+    return [0, 1, 6].includes(ws) ? ws : 0;
+  } catch {
+    return 0;
+  }
+}
+
 const state = {
   view: "year",
   cal: "hijri",
+  layout: "months",
+  weekStart: localeWeekStart(),
   theme: "dark",
   accent: null, // null = theme default
   w: 1179,
@@ -81,6 +95,11 @@ function syncForm() {
   setRadio("view", state.view);
   setRadio("cal", state.cal);
   setRadio("theme", state.theme);
+  setRadio("layout", effectiveLayout());
+  $("[name=weekStart]").value = state.weekStart;
+  $("#layout-fields").hidden = state.view === "goal";
+  $("#layout-quarters").hidden = state.view !== "year";
+  $("#week-start").hidden = effectiveLayout() === "grid";
   $("[name=w]").value = state.w;
   $("[name=h]").value = state.h;
   $("[name=tz]").value = state.tz;
@@ -134,6 +153,13 @@ function buildDateInputs() {
   }
 }
 
+// "quarters" only makes sense for the year view; the quarter view falls back to months.
+function effectiveLayout() {
+  if (state.view === "goal") return "grid";
+  if (state.layout === "quarters" && state.view !== "year") return "months";
+  return state.layout;
+}
+
 function update(patch, { rebuild = false } = {}) {
   Object.assign(state, patch);
   save();
@@ -146,6 +172,8 @@ form.addEventListener("change", (e) => {
   if (!name) return;
   if (name === "view" || name === "cal") update({ [name]: value }, { rebuild: true });
   else if (name === "theme") update({ theme: value }, { rebuild: true });
+  else if (name === "layout") update({ layout: value }, { rebuild: true });
+  else if (name === "weekStart") update({ weekStart: Number(value) });
   else if (name === "accent") update({ accent: value.toLowerCase() === THEMES[state.theme].today ? null : value });
   else if (name === "device") {
     if (value !== "custom") {
@@ -184,6 +212,11 @@ document.getElementById("this-screen").addEventListener("click", () => {
 
 function wallpaperURL() {
   const q = new URLSearchParams({ view: state.view, cal: state.cal, w: state.w, h: state.h, tz: state.tz, theme: state.theme });
+  const lay = effectiveLayout();
+  if (lay !== "grid") {
+    q.set("layout", lay);
+    q.set("ws", state.weekStart);
+  }
   if (state.accent) q.set("accent", state.accent.replace("#", ""));
   if (state.top !== 33) q.set("top", state.top);
   if (state.bottom !== 14) q.set("bottom", state.bottom);
@@ -219,7 +252,14 @@ function render() {
     openLink.removeAttribute("href");
     return;
   }
-  const L = layout({ ...state, accent: state.accent ?? undefined, top: state.top / 100, bottom: state.bottom / 100, ...v });
+  const L = layout({
+    ...state,
+    ...v,
+    layout: effectiveLayout(),
+    accent: state.accent ?? undefined,
+    top: state.top / 100,
+    bottom: state.bottom / 100,
+  });
   const doc = new DOMParser().parseFromString(toSVG(L), "image/svg+xml");
   preview.replaceChildren(document.importNode(doc.documentElement, true));
   const url = wallpaperURL();
