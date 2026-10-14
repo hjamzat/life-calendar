@@ -92,8 +92,8 @@ export function parts(cal, t) {
 }
 
 const HIJRI_MONTHS = [
-  "Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani", "Jumada al-Ula", "Jumada al-Akhirah",
-  "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhu al-Qadah", "Dhu al-Hijjah",
+  "Muharram", "Safar", "Rabi\u2019 al-Awwal", "Rabi\u2019 al-Thani", "Jumada al-Awwal", "Jumada al-Thani",
+  "Rajab", "Sha\u2019aban", "Ramadan", "Shawwal", "Dhu al-Qi\u2019dah", "Dhu al-Hijjah",
 ];
 const GREG_MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -104,14 +104,10 @@ export function monthName(cal, m) {
   return (cal === "gregory" ? GREG_MONTHS : HIJRI_MONTHS)[m - 1];
 }
 
-// Compact labels for month blocks on the wallpaper.
-const HIJRI_SHORT = [
-  "Muharram", "Safar", "Rabi I", "Rabi II", "Jumada I", "Jumada II",
-  "Rajab", "Shaban", "Ramadan", "Shawwal", "Dhul Qadah", "Dhul Hijjah",
-];
-
+// Labels for month blocks on the wallpaper: Hijri names in full (they fit
+// above a 7-dot block), Gregorian abbreviated.
 export function shortMonthName(cal, m) {
-  return cal === "gregory" ? GREG_MONTHS[m - 1].slice(0, 3) : HIJRI_SHORT[m - 1];
+  return cal === "gregory" ? GREG_MONTHS[m - 1].slice(0, 3) : HIJRI_MONTHS[m - 1];
 }
 
 export function formatDate(cal, t) {
