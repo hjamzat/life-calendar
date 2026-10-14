@@ -4,16 +4,18 @@ import { layout, THEMES, toSVG } from "./lib/render.js";
 
 // Portrait screen sizes in physical pixels.
 const DEVICES = [
-  ["iPhone 17 Pro Max · 16 Pro Max", 1320, 2868],
-  ["iPhone 17 · 17 Pro · 16 Pro", 1206, 2622],
+  ["iPhone 18 Pro Max · 17 Pro Max · 16 Pro Max", 1320, 2868],
+  ["iPhone 18 Pro · 17 · 17 Pro · 16 Pro", 1206, 2622],
+  ["iPhone Duo — inner screen", 1878, 2670],
+  ["iPhone Duo — outer screen", 1398, 2034],
   ["iPhone Air", 1260, 2736],
   ["iPhone 16 · 15 · 15 Pro · 14 Pro", 1179, 2556],
   ["iPhone 16 Plus · 15 Plus · 15 Pro Max · 14 Pro Max", 1290, 2796],
-  ["iPhone 14 · 13 · 13 Pro · 12 · 12 Pro", 1170, 2532],
+  ["iPhone 16e · 14 · 13 · 13 Pro · 12 · 12 Pro", 1170, 2532],
   ["iPhone 14 Plus · 13 Pro Max · 12 Pro Max", 1284, 2778],
   ["iPhone 13 mini · 12 mini", 1080, 2340],
   ["iPhone 11 · XR", 828, 1792],
-  ["iPhone SE (2nd/3rd gen)", 750, 1334],
+  ["iPhone SE (2nd/3rd gen) · 8 · 7 · 6s", 750, 1334],
   ["Android 1080 × 2400", 1080, 2400],
   ["Android 1440 × 3120", 1440, 3120],
 ];
