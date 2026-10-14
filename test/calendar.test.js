@@ -74,3 +74,34 @@ test("views produce consistent counts", () => {
   assert.equal(goal.footer, "Done");
   assert.throws(() => computeView({ view: "goal", cal: "hijri", tz: "UTC", start: fromISO("2026-03-01"), end: fromISO("2026-01-01") }));
 });
+
+test("sunset matches published times within 3 minutes", async () => {
+  const { sunset } = await import("../site/lib/calendar.js");
+  const cases = [
+    // [civil date, lat, lon, expected sunset UTC "HH:MM"]
+    ["2026-06-21", 51.5074, -0.1278, "20:21"], // London, midsummer (21:21 BST)
+    ["2026-12-21", 51.5074, -0.1278, "15:54"], // London, midwinter
+    ["2026-10-14", 34.05, -118.24, "01:20"], // Los Angeles 18:20 PDT = next day 01:20 UTC
+  ];
+  for (const [iso, lat, lon, hhmm] of cases) {
+    const s = sunset(fromISO(iso), lat, lon);
+    const [h, m] = hhmm.split(":").map(Number);
+    let expected = fromISO(iso) + (h * 60 + m) * 60000;
+    if (lon < -60 && h < 12) expected += DAY;
+    assert.ok(Math.abs(s - expected) < 3 * 60000, `${iso} ${lat},${lon}: ${new Date(s).toISOString()}`);
+  }
+  assert.equal(sunset(fromISO("2026-06-21"), 69.65, 18.96), null); // midnight sun
+});
+
+test("Hijri date advances at sunset, Gregorian at midnight", async () => {
+  const { effectiveToday } = await import("../site/lib/calendar.js");
+  const riyadh = { tz: "Asia/Riyadh", lat: 24.7, lon: 46.7 }; // sunset ~17:40 local in October
+  const before = new Date("2026-10-14T14:00:00Z"); // 17:00 local
+  const after = new Date("2026-10-14T15:30:00Z"); // 18:30 local
+  const civil = fromISO("2026-10-14");
+  assert.equal(effectiveToday({ cal: "hijri", ...riyadh, now: before }), civil);
+  assert.equal(effectiveToday({ cal: "hijri", ...riyadh, now: after }), civil + DAY);
+  assert.equal(effectiveToday({ cal: "hijri", ...riyadh, dayStart: "midnight", now: after }), civil);
+  assert.equal(effectiveToday({ cal: "gregory", ...riyadh, now: after }), civil);
+  assert.equal(effectiveToday({ cal: "hijri", tz: "Asia/Riyadh", now: after }), civil); // no location
+});

@@ -11,7 +11,7 @@
 <body>
   <header class="hero">
     <h1>Life Calendar</h1>
-    <p>A quiet lock-screen reminder of how much of the year, the quarter, or the road to your goal has passed. One dot per day, refreshed every morning.</p>
+    <p>A quiet lock-screen reminder of how much of the year, the quarter, or the road to your goal has passed. One dot per day, refreshed when the day changes — at sunset for the Hijri calendar, at midnight for the Gregorian.</p>
   </header>
 
   <main class="layout">
@@ -32,6 +32,19 @@
           <label><input type="radio" name="cal" value="gregory"><span>Gregorian</span></label>
         </div>
         <p class="hint">Hijri dates follow the official Umm al-Qura calendar.</p>
+        <div id="day-start">
+          <label class="field inline">New day starts at
+            <select name="dayStart">
+              <option value="sunset">Sunset (Maghrib)</option>
+              <option value="midnight">Midnight</option>
+            </select>
+          </label>
+          <div id="location" class="hint">
+            <span id="location-text"></span>
+            <button type="button" id="use-location" class="link">Use my location</button>
+            <button type="button" id="clear-location" class="link" hidden>Forget</button>
+          </div>
+        </div>
       </fieldset>
 
       <fieldset id="layout-fields">
@@ -93,7 +106,7 @@
         <legend>Time zone</legend>
         <input name="tz" list="tz-list" spellcheck="false">
         <datalist id="tz-list"></datalist>
-        <p class="hint">"Today" flips at midnight in this zone.</p>
+        <p class="hint">Your local time zone. Gregorian days change at midnight here; Hijri days at sunset (or midnight, if chosen above).</p>
       </fieldset>
     </form>
 
@@ -116,7 +129,7 @@
         <h3>iPhone — Shortcuts</h3>
         <ol>
           <li>Copy the URL above.</li>
-          <li>Open <b>Shortcuts</b> → <b>Automation</b> → <b>+</b> → <b>Time of Day</b>. Pick a time just after midnight, <b>Daily</b>, and <b>Run Immediately</b>.</li>
+          <li id="ios-trigger"></li>
           <li>Add the action <b>Get Contents of URL</b> and paste the URL.</li>
           <li>Add <b>Set Wallpaper Photo</b> (older iOS: <i>Set Wallpaper</i>), choose <b>Lock Screen</b>, and turn off <b>Show Preview</b> and <b>Crop to Subject</b>.</li>
           <li>Tap the play button once to check it.</li>
@@ -126,7 +139,7 @@
         <h3>Android</h3>
         <ol>
           <li>Copy the URL above.</li>
-          <li>In an automation app (Tasker, MacroDroid or a "wallpaper from URL" app), create a daily task that downloads the URL.</li>
+          <li id="android-trigger"></li>
           <li>Set the downloaded image as the lock-screen (or home) wallpaper.</li>
         </ol>
       </article>

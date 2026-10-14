@@ -2,6 +2,8 @@
 //   GET /wallpaper.png?view=year|quarter|goal&cal=hijri|gregory&w=1179&h=2556&tz=Asia/Riyadh
 //                     &theme=dark|black|light&accent=d9a441
 //                     &layout=grid|months|quarters&ws=0..6   (block layouts; ws 0 = Sunday)
+//                     &lat=..&lon=..&day=sunset|midnight     (Hijri day start; location for sunset,
+//                                                            falls back to the request's IP location)
 //                     [&start=YYYY-MM-DD&end=YYYY-MM-DD&title=...]   (goal)
 //   GET /wallpaper.svg?...   same, as SVG (debugging)
 
@@ -9,7 +11,7 @@ import { initWasm } from "@resvg/resvg-wasm";
 import resvgWasm from "@resvg/resvg-wasm/index_bg.wasm";
 import interRegular from "../site/fonts/Inter-Regular.ttf";
 import interSemiBold from "../site/fonts/Inter-SemiBold.ttf";
-import { computeView, fromISO, today, toISO } from "../site/lib/calendar.js";
+import { computeView, effectiveToday, fromISO, toISO } from "../site/lib/calendar.js";
 import { LAYOUTS, layout, THEMES, toSVG } from "../site/lib/render.js";
 import { rasterize } from "./raster.js";
 
@@ -32,6 +34,14 @@ function oneOf(params, key, allowed, def) {
   const v = params.get(key) ?? def;
   if (!allowed.includes(v)) throw new BadRequest(`${key} must be one of: ${allowed.join(", ")}`);
   return v;
+}
+
+function coord(params, key, limit) {
+  const raw = params.get(key);
+  if (raw == null || raw === "") return null;
+  const v = Number(raw);
+  if (!Number.isFinite(v) || Math.abs(v) > limit) throw new BadRequest(`${key} must be a number in -${limit}..${limit}`);
+  return Math.round(v * 100) / 100;
 }
 
 function validTimeZone(tz) {
@@ -57,6 +67,9 @@ export function parseParams(params) {
     theme,
     tz,
     accent,
+    dayStart: oneOf(params, "day", ["sunset", "midnight"], "sunset"),
+    lat: coord(params, "lat", 90),
+    lon: coord(params, "lon", 180),
     layout: oneOf(params, "layout", LAYOUTS, "grid"),
     weekStart: int(params, "ws", 0, 0, 6),
     w: int(params, "w", 1179, 200, 4000),
@@ -110,11 +123,28 @@ export default {
       throw e;
     }
 
-    // Images change once per day in the user's time zone: cache per (params, local date).
-    const cacheKey = new Request(`${url.origin}${url.pathname}?${url.searchParams}&_d=${toISO(today(p.tz))}`);
+    // Sunset needs a location: prefer the URL, else Cloudflare's IP geolocation.
+    if ((p.lat == null || p.lon == null) && p.cal === "hijri" && p.dayStart === "sunset") {
+      const lat = Number(request.cf?.latitude);
+      const lon = Number(request.cf?.longitude);
+      if (request.cf?.latitude != null && Number.isFinite(lat) && Number.isFinite(lon)) {
+        p.lat = Math.round(lat * 10) / 10;
+        p.lon = Math.round(lon * 10) / 10;
+      }
+    }
+    p.now = new Date();
+    const day = toISO(effectiveToday(p));
+
+    // The image changes once per (Hijri or civil) day: cache per params + that day
+    // (+ location when it came from the IP, since the URL doesn't carry it).
+    const cacheKey = new Request(`${url.origin}${url.pathname}?${url.searchParams}&_d=${day}&_l=${p.lat},${p.lon}`);
     const cache = caches.default;
     const hit = await cache.match(cacheKey);
-    if (hit) return hit;
+    if (hit) {
+      const headers = new Headers(hit.headers);
+      headers.set("Cache-Control", "no-cache");
+      return new Response(hit.body, { headers });
+    }
 
     try {
       if (format === "png") {
@@ -122,16 +152,13 @@ export default {
         await ready;
       }
       const body = render(p, format);
-      const res = new Response(body, {
-        headers: {
-          ...CORS,
-          "Content-Type": format === "png" ? "image/png" : "image/svg+xml",
-          // short client cache; the edge copy is keyed by date so it's always correct
-          "Cache-Control": "public, max-age=600",
-        },
-      });
-      ctx.waitUntil(cache.put(cacheKey, res.clone()));
-      return res;
+      const type = format === "png" ? "image/png" : "image/svg+xml";
+      // Edge copy is keyed by day, so it can live long; clients must re-fetch
+      // (the day can change at sunset, minutes after an earlier fetch).
+      ctx.waitUntil(
+        cache.put(cacheKey, new Response(body, { headers: { ...CORS, "Content-Type": type, "Cache-Control": "public, max-age=86400" } })),
+      );
+      return new Response(body, { headers: { ...CORS, "Content-Type": type, "Cache-Control": "no-cache" } });
     } catch (e) {
       if (e instanceof BadRequest) return new Response(e.message, { status: 400, headers: CORS });
       return new Response(`render failed: ${e.message}`, { status: 500, headers: CORS });

@@ -46,6 +46,42 @@ export function today(timeZone = "UTC", now = new Date()) {
   return Date.UTC(p.y, p.m - 1, p.d);
 }
 
+const RAD = Math.PI / 180;
+
+/**
+ * Sunset (sun's upper limb at the horizon, standard -0.833\u00b0 refraction) for
+ * civil day `t` at latitude/longitude (east positive), as epoch ms.
+ * Uses the NOAA/Wikipedia sunrise equation; accurate to about a minute.
+ * Returns null when the sun does not set or rise that day (polar regions).
+ */
+export function sunset(t, lat, lon) {
+  // days since J2000.0 at local mean solar noon of that civil date
+  const jstar = t / DAY + 2440587.5 - 2451545.0 + 0.5 - lon / 360;
+  const M = (357.5291 + 0.98560028 * jstar) % 360;
+  const C = 1.9148 * Math.sin(M * RAD) + 0.02 * Math.sin(2 * M * RAD) + 0.0003 * Math.sin(3 * M * RAD);
+  const lambda = (M + C + 180 + 102.9372) % 360;
+  const transit = jstar + 0.0053 * Math.sin(M * RAD) - 0.0069 * Math.sin(2 * lambda * RAD);
+  const sinDec = Math.sin(lambda * RAD) * Math.sin(23.4397 * RAD);
+  const cosDec = Math.cos(Math.asin(sinDec));
+  const cosH = (Math.sin(-0.833 * RAD) - Math.sin(lat * RAD) * sinDec) / (Math.cos(lat * RAD) * cosDec);
+  if (cosH < -1 || cosH > 1) return null;
+  const set = transit + Math.acos(cosH) / RAD / 360;
+  return Math.round((set + 2451545.0 - 2440587.5) * DAY);
+}
+
+/**
+ * The civil day whose date the wallpaper should show right now.
+ * The Hijri day begins at sunset (Maghrib), so after sunset the Hijri
+ * calendar moves to the next date. Needs a location; without one, or with
+ * `dayStart: "midnight"`, or for the Gregorian calendar, it is the civil date.
+ */
+export function effectiveToday({ cal, tz, lat, lon, dayStart, now = new Date() }) {
+  const t = today(tz, now);
+  if (cal !== "hijri" || dayStart === "midnight" || lat == null || lon == null) return t;
+  const s = sunset(t, lat, lon);
+  return s != null && now.getTime() >= s ? t + DAY : t;
+}
+
 /** {y, m, d} of a civil day in the given calendar ("hijri" | "gregory"). */
 export function parts(cal, t) {
   if (cal === "gregory") {
@@ -158,8 +194,8 @@ export function monthLength(cal, y, m) {
  * `months` / `quarters` are consecutive segments { label, start, days } of the
  * period (null when not applicable), used by the block layouts.
  */
-export function computeView({ view, cal, tz, start, end, title }) {
-  const t = today(tz);
+export function computeView({ view, cal, tz, start, end, title, lat, lon, dayStart, now }) {
+  const t = effectiveToday({ cal, tz, lat, lon, dayStart, now });
   if (view === "goal") {
     const s = start ?? t;
     const e = end;

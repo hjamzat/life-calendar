@@ -63,6 +63,9 @@ const state = {
   cal: "hijri",
   layout: "months",
   weekStart: localeWeekStart(),
+  dayStart: "sunset", // Hijri day begins at Maghrib
+  lat: null, // optional, rounded; used for the sunset time
+  lon: null,
   theme: "dark",
   accent: null, // null = theme default
   w: 1179,
@@ -113,7 +116,46 @@ function syncForm() {
   deviceSel.value = DEVICES.some(([, w, h]) => `${w}x${h}` === preset) ? preset : "custom";
   for (const r of form.querySelectorAll("input[type=range]")) r.nextElementSibling.textContent = `${r.value}%`;
   $("#goal-fields").hidden = state.view !== "goal";
+  $("#day-start").hidden = state.cal !== "hijri";
+  $("[name=dayStart]").value = state.dayStart;
+  $("#location").hidden = state.dayStart !== "sunset";
+  const hasLoc = state.lat != null && state.lon != null;
+  $("#location-text").textContent = hasLoc
+    ? `Sunset is calculated for ${state.lat}, ${state.lon}.`
+    : "Without a location, sunset is estimated from the phone's IP address when the image is downloaded (a VPN can make it wrong).";
+  $("#use-location").hidden = hasLoc;
+  $("#clear-location").hidden = !hasLoc;
   buildDateInputs();
+  updateSetup();
+}
+
+// Setup instructions follow the moment the wallpaper changes.
+function updateSetup() {
+  const sunsetMode = state.cal === "hijri" && state.dayStart === "sunset";
+  const ios = document.getElementById("ios-trigger");
+  const android = document.getElementById("android-trigger");
+  const b = (text) => el("b", { textContent: text });
+  if (sunsetMode) {
+    ios.replaceChildren(
+      "Open ", b("Shortcuts"), " \u2192 ", b("Automation"), " \u2192 ", b("+"), " \u2192 ", b("Time of Day"),
+      " and choose ", b("Sunset"), " with a small delay after it if offered (e.g. 15 minutes after), ",
+      b("Daily"), ", ", b("Run Immediately"),
+      ". The Hijri date changes at Maghrib, so the wallpaper does too \u2014 running it a few minutes after sunset avoids catching the old day.",
+    );
+    android.replaceChildren(
+      "In an automation app (Tasker, MacroDroid or a \u201cwallpaper from URL\u201d app), create a task that runs ",
+      b("shortly after sunset"), " every day and downloads the URL.",
+    );
+  } else {
+    ios.replaceChildren(
+      "Open ", b("Shortcuts"), " \u2192 ", b("Automation"), " \u2192 ", b("+"), " \u2192 ", b("Time of Day"),
+      ". Pick a time just after midnight, ", b("Daily"), ", and ", b("Run Immediately"), ".",
+    );
+    android.replaceChildren(
+      "In an automation app (Tasker, MacroDroid or a \u201cwallpaper from URL\u201d app), create a task that runs ",
+      b("just after midnight"), " every day and downloads the URL.",
+    );
+  }
 }
 
 // Date pickers follow the chosen calendar: native <input type=date> for
@@ -176,6 +218,7 @@ form.addEventListener("change", (e) => {
   else if (name === "theme") update({ theme: value }, { rebuild: true });
   else if (name === "layout") update({ layout: value }, { rebuild: true });
   else if (name === "weekStart") update({ weekStart: Number(value) });
+  else if (name === "dayStart") update({ dayStart: value }, { rebuild: true });
   else if (name === "accent") update({ accent: value.toLowerCase() === THEMES[state.theme].today ? null : value });
   else if (name === "device") {
     if (value !== "custom") {
@@ -203,6 +246,27 @@ form.addEventListener("input", (e) => {
   } else if (name === "title") update({ title: value });
 });
 
+document.getElementById("use-location").addEventListener("click", (e) => {
+  if (!navigator.geolocation) {
+    e.target.textContent = "Location not available";
+    return;
+  }
+  e.target.textContent = "Locating\u2026";
+  navigator.geolocation.getCurrentPosition(
+    ({ coords }) => {
+      e.target.textContent = "Use my location";
+      // ~10 km precision: plenty for sunset (under a minute), and less identifying
+      update({ lat: Math.round(coords.latitude * 10) / 10, lon: Math.round(coords.longitude * 10) / 10 }, { rebuild: true });
+    },
+    () => {
+      e.target.textContent = "Couldn't get location \u2014 try again";
+    },
+    { maximumAge: 3_600_000, timeout: 15_000 },
+  );
+});
+
+document.getElementById("clear-location").addEventListener("click", () => update({ lat: null, lon: null }, { rebuild: true }));
+
 document.getElementById("this-screen").addEventListener("click", () => {
   const dpr = window.devicePixelRatio || 1;
   const a = Math.round(screen.width * dpr);
@@ -218,6 +282,13 @@ function wallpaperURL() {
   if (lay !== "grid") {
     q.set("layout", lay);
     q.set("ws", state.weekStart);
+  }
+  if (state.cal === "hijri") {
+    if (state.dayStart === "midnight") q.set("day", "midnight");
+    else if (state.lat != null && state.lon != null) {
+      q.set("lat", state.lat);
+      q.set("lon", state.lon);
+    }
   }
   if (state.accent) q.set("accent", state.accent.replace("#", ""));
   if (state.top !== 33) q.set("top", state.top);
@@ -245,6 +316,9 @@ function render() {
       start: fromISO(state.start),
       end: fromISO(state.end),
       title: state.title,
+      lat: state.lat,
+      lon: state.lon,
+      dayStart: state.dayStart,
     });
     goalError.hidden = true;
   } catch (e) {

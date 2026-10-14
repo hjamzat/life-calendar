@@ -26,9 +26,11 @@ https://<worker>/wallpaper.png?view=year&cal=hijri&w=1179&h=2556&tz=Asia/Riyadh&
 | `view` | `year`, `quarter`, `goal` | `year` |
 | `cal` | `hijri`, `gregory` | `hijri` |
 | `layout` | `grid` (one block of dots), `months` (a calendar block per month), `quarters` (a block per quarter; year view only) | `grid` |
+| `day` | Hijri only: `sunset` (new day at Maghrib) or `midnight` | `sunset` |
+| `lat`, `lon` | location for the sunset time; if omitted, Cloudflare's IP geolocation is used | IP |
 | `ws` | first weekday for block layouts: `0` Sunday … `6` Saturday | `0` |
 | `w`, `h` | 200–4000 px | 1179×2556 |
-| `tz` | IANA zone; "today" flips at local midnight | `UTC` |
+| `tz` | IANA zone; used for the local date (Gregorian days change at local midnight) | `UTC` |
 | `theme` | `dark`, `black`, `light` | `dark` |
 | `accent` | hex colour for today's dot, e.g. `d9a441` | theme |
 | `top`, `bottom` | % of height kept free for clock / buttons | 33 / 14 |
