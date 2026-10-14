@@ -1,4 +1,4 @@
-# Hijri Time Wallpaper
+# Life Calendar
 
 Lock-screen wallpapers that show progress through the **Hijri (Umm al-Qura)** or
 **Gregorian** year, quarter, or towards a goal — one dot per day, regenerated
@@ -54,7 +54,7 @@ python3 -m http.server 5173 -d site        # http://localhost:5173 (uses the loc
 
    Push to `main` → `worker.yml` tests and runs `wrangler deploy`.
    (Or locally: `npx wrangler login && npm run deploy:worker`.)
-2. **Site** — set variable `WORKER_URL` = `https://hijri-life-calendar.<subdomain>.workers.dev`,
+2. **Site** — set variable `WORKER_URL` = `https://life-calendar.<subdomain>.workers.dev`,
    then *Settings → Pages → Source: GitHub Actions*. Push → `pages.yml` deploys `site/`.
 
 Rendered images are cached at the edge per parameter set and local date, so each

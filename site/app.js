@@ -17,7 +17,7 @@ const DEVICES = [
   ["Android 1080 × 2400", 1080, 2400],
   ["Android 1440 × 3120", 1440, 3120],
 ];
-const STORE = "hijri-wallpaper:v1";
+const STORE = "life-calendar:v1";
 
 const form = document.getElementById("form");
 const $ = (sel) => form.querySelector(sel);
