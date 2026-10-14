@@ -34,6 +34,16 @@ jobs:
           export const WORKER_URL = local ? "http://localhost:8787" : "${WORKER_URL%/}";
           EOF
 
+      # Pages lets browsers cache files for 10 minutes; without versioned URLs a
+      # fresh index.html can load stale app.js/lib modules. Stamp each deploy.
+      - name: Version asset URLs
+        run: |
+          v="${GITHUB_SHA::8}"
+          sed -i -E "s#(src|href)=\"(app\.js|style\.css)\"#\1=\"\2?v=$v\"#g" site/index.html
+          sed -i -E "s#from \"\./(config|lib/calendar|lib/render)\.js\"#from \"./\1.js?v=$v\"#g" site/app.js
+          grep -q "app.js?v=$v" site/index.html
+          test "$(grep -c "?v=$v" site/app.js)" -eq 3
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
