@@ -1,0 +1,13 @@
+name = "hijri-life-calendar"
+main = "worker/index.js"
+compatibility_date = "2026-10-01"
+
+# Fonts are bundled into the worker as ArrayBuffers.
+[[rules]]
+type = "Data"
+globs = ["**/*.ttf"]
+fallthrough = true
+
+[vars]
+# GitHub Pages URL of the site; "/" on the worker redirects there.
+SITE_URL = ""

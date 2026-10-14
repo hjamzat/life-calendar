@@ -1,0 +1,15 @@
+{
+  "name": "hijri-life-calendar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/",
+    "dev:worker": "wrangler dev",
+    "dev:site": "npx --yes serve site -l 5173",
+    "deploy:worker": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@resvg/resvg-wasm": "^2.6.2",
+    "wrangler": "^4.150.0"
+  }
+}

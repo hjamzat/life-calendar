@@ -1,0 +1,125 @@
+@font-face {
+  font-family: "Inter";
+  font-weight: 400;
+  src: url("fonts/Inter-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  font-weight: 600;
+  src: url("fonts/Inter-SemiBold.ttf") format("truetype");
+  font-display: swap;
+}
+
+:root {
+  --bg: #f4f1ea;
+  --panel: #fffdf8;
+  --ink: #24221f;
+  --muted: #8a857c;
+  --line: #e2ddd2;
+  --accent: #b5832a;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e0f10;
+    --panel: #17181a;
+    --ink: #e9e6df;
+    --muted: #8d8f92;
+    --line: #2a2b2d;
+    --accent: #d9a441;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font: 15px/1.5 Inter, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.hero { max-width: 1040px; margin: 0 auto; padding: 48px 20px 12px; }
+.hero h1 { font-size: 34px; margin: 0 0 8px; letter-spacing: -0.02em; }
+.hero p { margin: 0; max-width: 620px; color: var(--muted); }
+
+.layout {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.preview-panel { position: sticky; top: 16px; display: grid; gap: 12px; }
+
+fieldset { border: 0; margin: 0 0 18px; padding: 0; min-width: 0; }
+fieldset:last-child { margin-bottom: 0; }
+legend { font-weight: 600; margin-bottom: 8px; padding: 0; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span { display: block; padding: 6px 14px; border-radius: 7px; cursor: pointer; color: var(--muted); }
+.seg input:checked + span { background: var(--ink); color: var(--panel); }
+.seg input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.field { display: grid; gap: 4px; margin-top: 10px; color: var(--muted); font-size: 13px; }
+.field.inline { display: flex; align-items: center; gap: 10px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.date { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.date .year { width: 90px; }
+.suffix { color: var(--muted); }
+
+input, select, button, .button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+select, input:not([type]), input[name="tz"], input[name="title"] { width: 100%; }
+.date select { width: auto; }
+input[type="color"] { padding: 2px; width: 44px; height: 32px; }
+input[type="range"] { padding: 0; accent-color: var(--accent); }
+details { margin-top: 12px; }
+summary { cursor: pointer; color: var(--muted); }
+output { color: var(--ink); }
+
+button, .button { cursor: pointer; text-decoration: none; text-align: center; }
+button:hover, .button:hover { border-color: var(--muted); }
+.link { background: none; border: 0; padding: 6px 0 0; color: var(--accent); }
+
+.hint { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+.error { margin: 10px 0 0; color: #d0534b; font-size: 13px; }
+
+.phone {
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 6px solid #1b1c1e;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+  background: #1b1c1e;
+}
+.phone svg { display: block; width: 100%; height: auto; }
+
+.url-box { display: flex; gap: 6px; }
+.url-box input { flex: 1; min-width: 0; font-size: 12px; font-family: ui-monospace, monospace; }
+.actions { display: grid; }
+
+.setup { max-width: 1040px; margin: 0 auto; padding: 12px 20px; }
+.setup h2 { font-size: 22px; margin: 16px 0 12px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.cards article { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 4px 18px 10px; }
+.cards h3 { font-size: 16px; }
+.cards li { margin-bottom: 6px; }
+
+.foot { max-width: 1040px; margin: 0 auto; padding: 20px; color: var(--muted); font-size: 13px; }
+code { font-size: 12px; }

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hijri Time Wallpaper — year, quarter and goal progress on your lock screen</title>
+  <meta name="description" content="Minimal lock-screen wallpapers that show the Hijri (Umm al-Qura) or Gregorian year, quarter, or a goal countdown — updated every day.">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <h1>Hijri Time Wallpaper</h1>
+    <p>A quiet lock-screen reminder of how much of the year, the quarter, or the road to your goal has passed. One dot per day, refreshed every morning.</p>
+  </header>
+
+  <main class="layout">
+    <form id="form" class="panel" autocomplete="off">
+      <fieldset>
+        <legend>View</legend>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="view" value="year" checked><span>Year</span></label>
+          <label><input type="radio" name="view" value="quarter"><span>Quarter</span></label>
+          <label><input type="radio" name="view" value="goal"><span>Goal</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Calendar</legend>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="cal" value="hijri" checked><span>Hijri</span></label>
+          <label><input type="radio" name="cal" value="gregory"><span>Gregorian</span></label>
+        </div>
+        <p class="hint">Hijri dates follow the official Umm al-Qura calendar.</p>
+      </fieldset>
+
+      <fieldset id="goal-fields" hidden>
+        <legend>Goal</legend>
+        <label class="field">Title <input name="title" maxlength="40" placeholder="Ramadan"></label>
+        <div class="field">
+          <span>Target date</span>
+          <div class="date" data-date="end"></div>
+        </div>
+        <div class="field">
+          <span>Count from</span>
+          <div class="date" data-date="start"></div>
+        </div>
+        <p id="goal-error" class="error" hidden></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Device</legend>
+        <select name="device" id="device"></select>
+        <div class="row">
+          <label class="field">Width <input name="w" type="number" min="200" max="4000" required></label>
+          <label class="field">Height <input name="h" type="number" min="200" max="4000" required></label>
+        </div>
+        <button type="button" id="this-screen" class="link">Use this screen's size</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Look</legend>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="theme" value="dark" checked><span>Dark</span></label>
+          <label><input type="radio" name="theme" value="black"><span>Black</span></label>
+          <label><input type="radio" name="theme" value="light"><span>Light</span></label>
+        </div>
+        <label class="field inline">Today's colour <input type="color" name="accent" value="#d9a441"></label>
+        <details>
+          <summary>Spacing</summary>
+          <label class="field">Space for clock (top) <input type="range" name="top" min="0" max="60" value="33"><output></output></label>
+          <label class="field">Space for buttons (bottom) <input type="range" name="bottom" min="0" max="40" value="14"><output></output></label>
+        </details>
+      </fieldset>
+
+      <fieldset>
+        <legend>Time zone</legend>
+        <input name="tz" list="tz-list" spellcheck="false">
+        <datalist id="tz-list"></datalist>
+        <p class="hint">"Today" flips at midnight in this zone.</p>
+      </fieldset>
+    </form>
+
+    <section class="panel preview-panel">
+      <div id="preview" class="phone" aria-label="Wallpaper preview"></div>
+      <div class="url-box">
+        <input id="url" readonly aria-label="Wallpaper URL">
+        <button type="button" id="copy">Copy</button>
+      </div>
+      <div class="actions">
+        <a id="open" class="button" target="_blank" rel="noopener">Open PNG</a>
+      </div>
+    </section>
+  </main>
+
+  <section class="setup">
+    <h2>Make it update every day</h2>
+    <div class="cards">
+      <article>
+        <h3>iPhone — Shortcuts</h3>
+        <ol>
+          <li>Copy the URL above.</li>
+          <li>Open <b>Shortcuts</b> → <b>Automation</b> → <b>+</b> → <b>Time of Day</b>. Pick a time just after midnight, <b>Daily</b>, and <b>Run Immediately</b>.</li>
+          <li>Add the action <b>Get Contents of URL</b> and paste the URL.</li>
+          <li>Add <b>Set Wallpaper Photo</b> (older iOS: <i>Set Wallpaper</i>), choose <b>Lock Screen</b>, and turn off <b>Show Preview</b> and <b>Crop to Subject</b>.</li>
+          <li>Tap the play button once to check it.</li>
+        </ol>
+      </article>
+      <article>
+        <h3>Android</h3>
+        <ol>
+          <li>Copy the URL above.</li>
+          <li>In an automation app (Tasker, MacroDroid or a "wallpaper from URL" app), create a daily task that downloads the URL.</li>
+          <li>Set the downloaded image as the lock-screen (or home) wallpaper.</li>
+        </ol>
+      </article>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Dates computed with the Umm al-Qura calendar via the browser's <code>Intl</code> API. Font: Inter (SIL OFL).</p>
+  </footer>
+</body>
+</html>
