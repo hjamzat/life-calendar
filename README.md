@@ -4,7 +4,7 @@ Lock-screen wallpapers that show progress through the **Hijri (Umm al-Qura)** or
 **Gregorian** year, quarter, or towards a goal — one dot per day, regenerated
 daily by an iOS Shortcut or Android automation.
 
-```
+```text
 site/            static site (GitHub Pages): configurator + live preview
   lib/calendar.js  calendar math (Intl islamic-umalqura), shared with the worker
   lib/render.js    layout + SVG, shared with the worker
@@ -17,7 +17,7 @@ test/            node --test
 
 ## Wallpaper URL
 
-```
+```text
 https://<worker>/wallpaper.png?view=year&cal=hijri&w=1179&h=2556&tz=Asia/Riyadh&theme=dark
 ```
 
