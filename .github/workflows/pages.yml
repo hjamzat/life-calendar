@@ -31,7 +31,9 @@ jobs:
         run: |
           cat > site/config.js <<EOF
           const local = ["localhost", "127.0.0.1"].includes(location.hostname);
-          export const WORKER_URL = local ? "http://localhost:8787" : "${WORKER_URL%/}";
+          export const WORKER_URL = local
+            ? "http://localhost:8787"
+            : "${WORKER_URL%/}";
           EOF
 
       # Pages lets browsers cache files for 10 minutes; without versioned URLs a
@@ -39,8 +41,10 @@ jobs:
       - name: Version asset URLs
         run: |
           v="${GITHUB_SHA::8}"
-          sed -i -E "s#(src|href)=\"(app\.js|style\.css)\"#\1=\"\2?v=$v\"#g" site/index.html
-          sed -i -E "s#from \"\./(config|lib/calendar|lib/render)\.js\"#from \"./\1.js?v=$v\"#g" site/app.js
+          assets='(src|href)="(app\.js|style\.css)"'
+          sed -i -E "s#$assets#\1=\"\2?v=$v\"#g" site/index.html
+          mods='from "\./(config|lib/calendar|lib/render)\.js"'
+          sed -i -E "s#$mods#from \"./\1.js?v=$v\"#g" site/app.js
           grep -q "app.js?v=$v" site/index.html
           test "$(grep -c "?v=$v" site/app.js)" -eq 3
 
