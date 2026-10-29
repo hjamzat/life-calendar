@@ -103,5 +103,29 @@ test("Hijri date advances at sunset, Gregorian at midnight", async () => {
   assert.equal(effectiveToday({ cal: "hijri", ...riyadh, now: after }), civil + DAY);
   assert.equal(effectiveToday({ cal: "hijri", ...riyadh, dayStart: "midnight", now: after }), civil);
   assert.equal(effectiveToday({ cal: "gregory", ...riyadh, now: after }), civil);
-  assert.equal(effectiveToday({ cal: "hijri", tz: "Asia/Riyadh", now: after }), civil); // no location
+  assert.equal(effectiveToday({ cal: "hijri", tz: "Asia/Riyadh", now: after }), civil + DAY); // Riyadh city
+  assert.equal(effectiveToday({ cal: "hijri", tz: "UTC", now: new Date("2026-10-14T23:00:00Z") }), civil); // no city
+});
+
+test("without coordinates, sunset is taken at the time zone's city", async () => {
+  const { effectiveToday, sunsetPlace } = await import("../site/lib/calendar.js");
+  assert.deepEqual(sunsetPlace({ tz: "Europe/Moscow" }), { lat: 55.76, lon: 37.62, city: "Moscow" });
+  assert.equal(sunsetPlace({ tz: "America/Argentina/Buenos_Aires" }).city, "Buenos Aires");
+  assert.equal(sunsetPlace({ tz: "Asia/Calcutta" }).city, "Kolkata"); // legacy name browsers report
+  assert.deepEqual(sunsetPlace({ tz: "Europe/Moscow", lat: 1, lon: 2 }), { lat: 1, lon: 2, city: null });
+  assert.equal(sunsetPlace({ tz: "UTC" }), null);
+  // 29 Oct 2026, 17:00 UTC: London's sun has set (~16:40), Lisbon's hasn't (~17:40)
+  const now = new Date("2026-10-29T17:00:00Z");
+  const civil = fromISO("2026-10-29");
+  assert.equal(effectiveToday({ cal: "hijri", tz: "Europe/London", now }), civil + DAY);
+  assert.equal(effectiveToday({ cal: "hijri", tz: "Europe/Lisbon", now }), civil);
+  // explicit coordinates win over the zone's city
+  assert.equal(effectiveToday({ cal: "hijri", tz: "Europe/Lisbon", lat: 51.51, lon: -0.13, now }), civil + DAY);
+});
+
+test("every time zone the browser can report has a sunset city", async () => {
+  const { sunsetPlace } = await import("../site/lib/calendar.js");
+  const zones = Intl.supportedValuesOf("timeZone").filter((tz) => !/^(UTC$|Etc\/)/.test(tz));
+  const missing = zones.filter((tz) => !sunsetPlace({ tz }));
+  assert.deepEqual(missing, []);
 });

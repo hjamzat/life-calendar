@@ -47,6 +47,8 @@ jobs:
           sed -i -E "s#$mods#from \"./\1.js?v=$v\"#g" site/app.js
           grep -q "app.js?v=$v" site/index.html
           test "$(grep -c "?v=$v" site/app.js)" -eq 3
+          sed -i -E "s#from \"\./tz-cities\.js\"#from \"./tz-cities.js?v=$v\"#" site/lib/calendar.js
+          grep -q "tz-cities.js?v=$v" site/lib/calendar.js
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

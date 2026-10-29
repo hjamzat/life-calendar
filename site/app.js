@@ -1,5 +1,5 @@
 import { WORKER_URL } from "./config.js";
-import { computeView, fromISO, fromParts, monthLength, monthName, parts, toISO, today } from "./lib/calendar.js";
+import { computeView, fromISO, fromParts, monthLength, monthName, parts, sunsetPlace, toISO, today } from "./lib/calendar.js";
 import { layout, THEMES, toSVG } from "./lib/render.js";
 
 // Portrait screen sizes in physical pixels.
@@ -46,25 +46,13 @@ const saved = (() => {
   }
 })();
 
-// Locale's first day of week (Intl: 1 = Monday … 7 = Sunday) → 0 = Sunday … 6 = Saturday.
-function localeWeekStart() {
-  try {
-    const loc = new Intl.Locale(navigator.language);
-    const first = (loc.getWeekInfo?.() ?? loc.weekInfo)?.firstDay;
-    const ws = first % 7;
-    return [0, 1, 6].includes(ws) ? ws : 0;
-  } catch {
-    return 0;
-  }
-}
-
 const state = {
   view: "year",
   cal: "hijri",
   layout: "months",
-  weekStart: localeWeekStart(),
+  weekStart: 6, // Saturday, so the week ends on Friday
   dayStart: "sunset", // Hijri day begins at Maghrib
-  lat: null, // optional, rounded; used for the sunset time
+  lat: null, // optional, rounded; sunset location (else the time zone's city)
   lon: null,
   theme: "dark",
   accent: null, // null = theme default
@@ -120,9 +108,13 @@ function syncForm() {
   $("[name=dayStart]").value = state.dayStart;
   $("#location").hidden = state.dayStart !== "sunset";
   const hasLoc = state.lat != null && state.lon != null;
+  const city = sunsetPlace({ tz: state.tz })?.city;
   $("#location-text").textContent = hasLoc
-    ? `Sunset is calculated for ${state.lat}, ${state.lon}.`
-    : "Without a location, sunset is estimated from the phone's IP address when the image is downloaded (a VPN can make it wrong).";
+    ? `Sunset location: your location (${state.lat}, ${state.lon}).`
+    : city
+      ? `Sunset location: ${city}, your time zone's city. Your town's sunset may differ by several minutes.`
+      : `Sunset location: none — ${state.tz} has no city, so the day changes at midnight until you use your location.`;
+  $("#clear-location").textContent = city ? `Use ${city} instead` : "Forget";
   $("#use-location").hidden = hasLoc;
   $("#clear-location").hidden = !hasLoc;
   buildDateInputs();
@@ -231,7 +223,8 @@ form.addEventListener("change", (e) => {
   } else if (name === "tz") {
     try {
       new Intl.DateTimeFormat("en", { timeZone: value });
-      update({ tz: value });
+      // A different zone means a different place: sunset follows its city.
+      if (value !== state.tz) update({ tz: value, lat: null, lon: null }, { rebuild: true });
     } catch {
       e.target.value = state.tz;
     }
@@ -254,7 +247,7 @@ document.getElementById("use-location").addEventListener("click", (e) => {
   e.target.textContent = "Locating\u2026";
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
-      e.target.textContent = "Use my location";
+      e.target.textContent = "Use my precise location";
       // ~10 km precision: plenty for sunset (under a minute), and less identifying
       update({ lat: Math.round(coords.latitude * 10) / 10, lon: Math.round(coords.longitude * 10) / 10 }, { rebuild: true });
     },

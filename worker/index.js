@@ -1,9 +1,9 @@
 // Cloudflare Worker: renders wallpaper PNGs on request.
 //   GET /wallpaper.png?view=year|quarter|goal&cal=hijri|gregory&w=1179&h=2556&tz=Asia/Riyadh
 //                     &theme=dark|black|light&accent=d9a441
-//                     &layout=grid|months|quarters&ws=0..6   (block layouts; ws 0 = Sunday)
+//                     &layout=grid|months|quarters&ws=0..6   (block layouts; ws 0 = Sunday, default 6 = Saturday)
 //                     &lat=..&lon=..&day=sunset|midnight     (Hijri day start; location for sunset,
-//                                                            falls back to the request's IP location)
+//                                                            defaults to the time zone's city)
 //                     [&start=YYYY-MM-DD&end=YYYY-MM-DD&title=...]   (goal)
 //   GET /wallpaper.svg?...   same, as SVG (debugging)
 
@@ -71,7 +71,7 @@ export function parseParams(params) {
     lat: coord(params, "lat", 90),
     lon: coord(params, "lon", 180),
     layout: oneOf(params, "layout", LAYOUTS, "grid"),
-    weekStart: int(params, "ws", 0, 0, 6),
+    weekStart: int(params, "ws", 6, 0, 6),
     w: int(params, "w", 1179, 200, 4000),
     h: int(params, "h", 2556, 200, 4000),
     top: int(params, "top", 33, 0, 80) / 100,
@@ -123,21 +123,12 @@ export default {
       throw e;
     }
 
-    // Sunset needs a location: prefer the URL, else Cloudflare's IP geolocation.
-    if ((p.lat == null || p.lon == null) && p.cal === "hijri" && p.dayStart === "sunset") {
-      const lat = Number(request.cf?.latitude);
-      const lon = Number(request.cf?.longitude);
-      if (request.cf?.latitude != null && Number.isFinite(lat) && Number.isFinite(lon)) {
-        p.lat = Math.round(lat * 10) / 10;
-        p.lon = Math.round(lon * 10) / 10;
-      }
-    }
     p.now = new Date();
     const day = toISO(effectiveToday(p));
 
-    // The image changes once per (Hijri or civil) day: cache per params + that day
-    // (+ location when it came from the IP, since the URL doesn't carry it).
-    const cacheKey = new Request(`${url.origin}${url.pathname}?${url.searchParams}&_d=${day}&_l=${p.lat},${p.lon}`);
+    // The image changes once per (Hijri or civil) day, and the URL fully
+    // determines it: cache per params + that day.
+    const cacheKey = new Request(`${url.origin}${url.pathname}?${url.searchParams}&_d=${day}`);
     const cache = caches.default;
     const hit = await cache.match(cacheKey);
     if (hit) {

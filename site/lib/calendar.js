@@ -2,6 +2,8 @@
 // Dates are "civil days": epoch milliseconds of UTC midnight for that day.
 // Hijri dates use Intl's `islamic-umalqura` (official Saudi Umm al-Qura).
 
+import { TZ_ALIASES, TZ_CITIES } from "./tz-cities.js";
+
 export const DAY = 86_400_000;
 
 const fmtCache = new Map();
@@ -70,15 +72,31 @@ export function sunset(t, lat, lon) {
 }
 
 /**
+ * Where sunset is calculated: the given coordinates, else the reference city
+ * of the time zone (tzdata zone.tab, e.g. Europe/Moscow → Moscow).
+ * `city` is that city's name, or null for explicit coordinates.
+ * Returns null for zones without a city (UTC, Etc/*).
+ */
+export function sunsetPlace({ tz, lat, lon }) {
+  if (lat != null && lon != null) return { lat, lon, city: null };
+  const zone = TZ_ALIASES[tz] ?? tz;
+  const c = TZ_CITIES[zone];
+  if (!c) return null;
+  return { lat: c[0], lon: c[1], city: zone.slice(zone.lastIndexOf("/") + 1).replaceAll("_", " ") };
+}
+
+/**
  * The civil day whose date the wallpaper should show right now.
  * The Hijri day begins at sunset (Maghrib), so after sunset the Hijri
- * calendar moves to the next date. Needs a location; without one, or with
- * `dayStart: "midnight"`, or for the Gregorian calendar, it is the civil date.
+ * calendar moves to the next date. With `dayStart: "midnight"`, for the
+ * Gregorian calendar, or when there is no sunset place, it is the civil date.
  */
 export function effectiveToday({ cal, tz, lat, lon, dayStart, now = new Date() }) {
   const t = today(tz, now);
-  if (cal !== "hijri" || dayStart === "midnight" || lat == null || lon == null) return t;
-  const s = sunset(t, lat, lon);
+  if (cal !== "hijri" || dayStart === "midnight") return t;
+  const place = sunsetPlace({ tz, lat, lon });
+  if (!place) return t;
+  const s = sunset(t, place.lat, place.lon);
   return s != null && now.getTime() >= s ? t + DAY : t;
 }
 
