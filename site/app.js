@@ -109,14 +109,13 @@ function syncForm() {
   $("#location").hidden = state.dayStart !== "sunset";
   const hasLoc = state.lat != null && state.lon != null;
   const city = sunsetPlace({ tz: state.tz })?.city;
+  setRadio("sunsetAt", hasLoc ? "here" : "city");
+  $("#sunset-city").textContent = city ?? state.tz;
   $("#location-text").textContent = hasLoc
-    ? `Sunset location: your location (${state.lat}, ${state.lon}).`
+    ? `Sunset is calculated for your location (${state.lat}, ${state.lon}), saved in the URL. Set up again if you move.`
     : city
-      ? `Sunset location: ${city}, your time zone's city. Your town's sunset may differ by several minutes.`
-      : `Sunset location: none — ${state.tz} has no city, so the day changes at midnight until you use your location.`;
-  $("#clear-location").textContent = city ? `Use ${city} instead` : "Forget";
-  $("#use-location").hidden = hasLoc;
-  $("#clear-location").hidden = !hasLoc;
+      ? `Sunset is calculated for ${city}, your time zone's city. Live somewhere else? Choose My location — within one time zone sunset can differ by many minutes.`
+      : `${state.tz} has no city, so the day changes at midnight. Choose My location to switch at sunset.`;
   buildDateInputs();
   updateSetup();
 }
@@ -211,6 +210,10 @@ form.addEventListener("change", (e) => {
   else if (name === "layout") update({ layout: value }, { rebuild: true });
   else if (name === "weekStart") update({ weekStart: Number(value) });
   else if (name === "dayStart") update({ dayStart: value }, { rebuild: true });
+  else if (name === "sunsetAt") {
+    if (value === "here") locate();
+    else update({ lat: null, lon: null }, { rebuild: true });
+  }
   else if (name === "accent") update({ accent: value.toLowerCase() === THEMES[state.theme].today ? null : value });
   else if (name === "device") {
     if (value !== "custom") {
@@ -239,26 +242,21 @@ form.addEventListener("input", (e) => {
   } else if (name === "title") update({ title: value });
 });
 
-document.getElementById("use-location").addEventListener("click", (e) => {
-  if (!navigator.geolocation) {
-    e.target.textContent = "Location not available";
-    return;
-  }
-  e.target.textContent = "Locating\u2026";
+function locate() {
+  const text = $("#location-text");
+  const fail = (msg) => {
+    syncForm(); // back to the previous choice
+    text.textContent = msg;
+  };
+  if (!navigator.geolocation) return fail("This browser can't share its location.");
+  text.textContent = "Locating…";
   navigator.geolocation.getCurrentPosition(
-    ({ coords }) => {
-      e.target.textContent = "Use my precise location";
-      // ~10 km precision: plenty for sunset (under a minute), and less identifying
-      update({ lat: Math.round(coords.latitude * 10) / 10, lon: Math.round(coords.longitude * 10) / 10 }, { rebuild: true });
-    },
-    () => {
-      e.target.textContent = "Couldn't get location \u2014 try again";
-    },
+    // ~10 km precision: plenty for sunset (under a minute), and less identifying
+    ({ coords }) => update({ lat: Math.round(coords.latitude * 10) / 10, lon: Math.round(coords.longitude * 10) / 10 }, { rebuild: true }),
+    () => fail("Couldn't get your location — check the browser's location permission and try again."),
     { maximumAge: 3_600_000, timeout: 15_000 },
   );
-});
-
-document.getElementById("clear-location").addEventListener("click", () => update({ lat: null, lon: null }, { rebuild: true }));
+}
 
 document.getElementById("this-screen").addEventListener("click", () => {
   const dpr = window.devicePixelRatio || 1;

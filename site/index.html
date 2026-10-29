@@ -39,10 +39,14 @@
               <option value="midnight">Midnight</option>
             </select>
           </label>
-          <div id="location" class="hint">
-            <span id="location-text"></span>
-            <button type="button" id="use-location" class="link">Use my precise location</button>
-            <button type="button" id="clear-location" class="link" hidden>Forget</button>
+          <div id="location">
+            <div class="field inline">Sunset at
+              <div class="seg" role="radiogroup" aria-label="Sunset location">
+                <label><input type="radio" name="sunsetAt" value="city"><span id="sunset-city"></span></label>
+                <label><input type="radio" name="sunsetAt" value="here"><span>My location</span></label>
+              </div>
+            </div>
+            <p id="location-text" class="hint"></p>
           </div>
         </div>
       </fieldset>
